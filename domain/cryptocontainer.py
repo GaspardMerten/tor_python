@@ -70,8 +70,6 @@ def _encrypt_message_using_sha256(message: str, public_key: RSAPublicKey) -> str
 
 
 def decrypt_message_using_sha256(message: str, private_key) -> str:
-    print(message)
-
     encrypted_sym_key = bytes.fromhex(message[:ENCRYPTED_SYM_KEY_LENGTH_HEX])
 
     print(encrypted_sym_key)

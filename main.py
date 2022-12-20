@@ -1,16 +1,39 @@
-# This is a sample Python script.
+import threading
 
-# Press Maj+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+from client import TorClient
+from models.node import TorNode
+from server_node import ServerNode
 
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
-
-
-# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    print_hi('PyCharm')
+    server_nodes = [
+        ServerNode(("localhost", 8080 + i))
+        for i in range(10)
+    ]
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+
+    class Thread(threading.Thread):
+        def __init__(self, server_node):
+            threading.Thread.__init__(self)
+            self.server_node = server_node
+            self.daemon = True
+            self.start()
+
+        def run(self):
+            self.server_node.serve_forever()
+
+    threads = [Thread(server_node) for server_node in server_nodes]
+
+    input("Press Enter to continue...")
+
+    tor_client = TorClient(list(map(lambda server_node: TorNode(
+        server_node.server_address[0],
+        server_node.server_address[1],
+        server_node.crypto.get_public_key_bytes().decode("utf-8"),
+    ), server_nodes)))
+
+    def build_http_get_message_from_url():
+        return f"GET / HTTP/1.1\nHost: httpforever.com:80\n\n"
+
+    print(tor_client.send_http_message(
+        build_http_get_message_from_url()
+    ))

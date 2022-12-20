@@ -53,7 +53,6 @@ class ServerNodeHTTPHandler(socketserver.ThreadingMixIn, BaseHTTPRequestHandler)
             self.send_response(200)
 
     def do_POST(self):
-        print("RECEIVED MESSAGE ")
         # Retrieve body in string
         content_length = int(self.headers['Content-Length'])
         body = self.rfile.read(content_length).decode("utf-8")
@@ -64,7 +63,6 @@ class ServerNodeHTTPHandler(socketserver.ThreadingMixIn, BaseHTTPRequestHandler)
         self.send_response(200)
 
         if is_final_node(decrypted_body):
-            print("FINAL XX ")
             sym_key, http_message = decode_tor_message_for_final_node(decrypted_body)
             # Send http message to server
             response = send_http_request_from_raw_http_message(http_message)
@@ -76,12 +74,8 @@ class ServerNodeHTTPHandler(socketserver.ThreadingMixIn, BaseHTTPRequestHandler)
             self.wfile.write(encrypted_response)
         else:
             next_node, http_message = decode_tor_message_for_intermediate_node(decrypted_body)
-            print("HELLO")
-            print(next_node)
             next_node_response = requests.post(f"http://{next_node}", http_message)
-            print("HELLOY")
 
-            print(next_node_response.text)
             self.send_header("Content-length", str(len(next_node_response.content)))
             self.end_headers()
             self.wfile.write(next_node_response.content)
@@ -94,29 +88,11 @@ class ServerNode(HTTPServer):
         self.crypto = CryptoContainer(private_key_path, public_key_path)
         self.http_handler = ServerNodeHTTPHandler
 
-
     def get_request(self):
-        print("XX " + self.server_address[0] + ":" + str(self.server_address[1]))
         return super().get_request()
 
-
     def handle_request(self) -> None:
-        print("HELLO " + self.server_address[0] + ":" + str(self.server_address[1]))
         super().handle_request()
+
     def finish_request(self, request, client_address):
-        print("RECEIVED REQUEST " + self.server_address[0] + ":" + str(self.server_address[1]))
         self.http_handler(request, client_address, self, self.crypto)
-
-
-def run():
-    print('http server is starting...')
-
-    # ip and port of servr
-    # by default http server port is 80
-    server_address = ('localhost', 8085)
-    server_node = ServerNode(server_address)
-    server_node.serve_forever()
-
-
-if __name__ == '__main__':
-    run()
