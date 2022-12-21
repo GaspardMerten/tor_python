@@ -1,3 +1,4 @@
+import re
 import socket
 import socketserver
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -11,28 +12,56 @@ from domain.tor_message import decode_tor_message_for_final_node, decode_tor_mes
 
 
 def send_http_request_from_raw_http_message(raw_http_message):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    regex = r"([A-Z]+)\s(\/.*)\sHTTP\/([1-2](?:.[0-2])?)\sHost:\s(.*)\s([\s\S]*)"
 
-    try:
-        # retrieve ip and port from raw http message
-        host, port = raw_http_message.split('Host: ')[1].split('\r\n')[0].split(':')
+    match = re.match(regex, raw_http_message, re.MULTILINE)
+    method = match.group(1)
+    path = match.group(2)
+    http_version = match.group(3)
+    host = match.group(4)
+    headers_and_body = match.group(5)
 
-        # connect to server
-        sock.connect((host, int(port)))
+    protocol = "https"
 
-        # send http request
-        sock.sendall(raw_http_message.encode('utf-8'))
+    if http_version[0] == "1":
+        protocol = "http"
 
-        response = ""
+    if "\r\n\r\n" in headers_and_body:
+        raw_headers, body = headers_and_body.split("\r\n\r\n")
+    else:
+        raw_headers = headers_and_body
+        body = None
 
-        while True:
-            response += sock.recv(4096).decode('utf-8')
-            if response.endswith('\r\n\r\n'):
-                break
-    finally:
-        sock.close()
+    request_func = requests.get
 
-    return response
+    if method == "POST":
+        request_func = requests.post
+    elif method == "PUT":
+        request_func = requests.put
+    elif method == "DELETE":
+        request_func = requests.delete
+
+    headers = {}
+
+    for header_line in raw_headers.splitlines():
+        header_name, header_value = header_line.split(": ")
+        headers[header_name] = header_value
+
+    response = request_func(
+        f"{protocol}://{host}{path}",
+        headers=headers,
+        data=body,
+        timeout=10
+    )
+
+    return response_object_to_raw_http_message(response)
+
+
+def response_object_to_raw_http_message(response):
+    def format_headers(d):
+        return '\n'.join(f'{k}: {v}' for k, v in d.items())
+
+    return f"""{response.status_code} {response.reason} {response.url}\n{format_headers(response.headers)}\n\n{response.text}"""
 
 
 # noinspection HttpUrlsUsage
@@ -58,27 +87,22 @@ class ServerNodeHTTPHandler(socketserver.ThreadingMixIn, BaseHTTPRequestHandler)
         body = self.rfile.read(content_length).decode("utf-8")
 
         # Decrypt body
-        decrypted_body = self.crypto.decrypt(body)
+        decrypted_body, sym_key = self.crypto.decrypt(body)
 
         self.send_response(200)
 
         if is_final_node(decrypted_body):
-            sym_key, http_message = decode_tor_message_for_final_node(decrypted_body)
+            http_message = decode_tor_message_for_final_node(decrypted_body)
             # Send http message to server
             response = send_http_request_from_raw_http_message(http_message)
             # Encrypt response using extracted public key
-            encrypted_response = Fernet(sym_key).encrypt(response.encode("utf-8"))
-            self.send_header("Content-length", str(len(encrypted_response)))
-            self.end_headers()
-
-            self.wfile.write(encrypted_response)
         else:
             next_node, http_message = decode_tor_message_for_intermediate_node(decrypted_body)
-            next_node_response = requests.post(f"http://{next_node}", http_message)
-
-            self.send_header("Content-length", str(len(next_node_response.content)))
-            self.end_headers()
-            self.wfile.write(next_node_response.content)
+            response = requests.post(f"http://{next_node}", http_message).text
+        encrypted_response = Fernet(sym_key).encrypt(response.encode("utf-8"))
+        self.send_header("Content-length", str(len(encrypted_response)))
+        self.end_headers()
+        self.wfile.write(encrypted_response)
 
 
 class ServerNode(HTTPServer):

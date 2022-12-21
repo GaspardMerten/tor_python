@@ -32,7 +32,18 @@ if __name__ == '__main__':
     ), server_nodes)))
 
     def build_http_get_message_from_url():
-        return f"GET / HTTP/1.1\nHost: httpforever.com:80\n\n"
+        return f"""GET / HTTP/2.0
+Host: cdn.storage.giveactions.com
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:107.0) Gecko/20100101 Firefox/107.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+Accept-Language: fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3
+Accept-Encoding: gzip, deflate
+Referer: https://www.google.com/
+Connection: keep-alive
+Upgrade-Insecure-Requests: 1
+Sec-GPC: 1
+Pragma: no-cache
+Cache-Control: no-cache"""
 
     print(tor_client.send_http_message(
         build_http_get_message_from_url()

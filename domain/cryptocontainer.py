@@ -1,4 +1,4 @@
-import base64
+from typing import Tuple
 
 from cryptography.fernet import Fernet
 from cryptography.hazmat.backends import default_backend
@@ -37,14 +37,14 @@ class CryptoContainer:
         # encrypt message using private key and rsa padding 2048
         return _encrypt_message_using_sha256(message, self.public_key)
 
-    def decrypt(self, message):
+    def decrypt(self, message) -> Tuple[str, str]:
         return decrypt_message_using_sha256(
             message,
             self.private_key
         )
 
 
-def encrypt_message_using_public_key(message: str, public_key: bytes) -> str:
+def encrypt_message_using_public_key(message: str, public_key: bytes) -> Tuple[str, str]:
     # load public key from pem format key
 
     public_key_rsa = serialization.load_pem_public_key(public_key, backend=default_backend())
@@ -56,7 +56,7 @@ def generate_symmetric_key():
     return Fernet.generate_key()
 
 
-def _encrypt_message_using_sha256(message: str, public_key: RSAPublicKey) -> str:
+def _encrypt_message_using_sha256(message: str, public_key: RSAPublicKey) -> Tuple[str, str]:
     sym_key = generate_symmetric_key()
 
     sym_key_message_part = public_key.encrypt(sym_key, padding.OAEP(
@@ -66,13 +66,12 @@ def _encrypt_message_using_sha256(message: str, public_key: RSAPublicKey) -> str
     ))
 
     encrypted_message = Fernet(sym_key).encrypt(bytes(message, "utf-8"))
-    return sym_key_message_part.hex() + encrypted_message.decode("utf-8")
+    return sym_key_message_part.hex() + encrypted_message.decode("utf-8"), sym_key
 
 
-def decrypt_message_using_sha256(message: str, private_key) -> str:
+def decrypt_message_using_sha256(message: str, private_key) -> Tuple[str, str]:
     encrypted_sym_key = bytes.fromhex(message[:ENCRYPTED_SYM_KEY_LENGTH_HEX])
 
-    print(encrypted_sym_key)
     sym_key = private_key.decrypt(
         encrypted_sym_key,
         padding.OAEP(
@@ -82,7 +81,7 @@ def decrypt_message_using_sha256(message: str, private_key) -> str:
         )
     )
 
-    return Fernet(sym_key).decrypt(message[ENCRYPTED_SYM_KEY_LENGTH_HEX:].encode()).decode("utf-8")
+    return Fernet(sym_key).decrypt(message[ENCRYPTED_SYM_KEY_LENGTH_HEX:].encode()).decode("utf-8"), sym_key
 
 
 def _generate_public_and_private_key_pair(bits=2048):

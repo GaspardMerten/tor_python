@@ -1,16 +1,13 @@
 import random
-import threading
-from typing import List
-
 import requests
+from typing import List, Tuple
+
 from cryptography.fernet import Fernet
 
-from domain.cryptocontainer import decrypt_message_using_sha256, encrypt_message_using_public_key
-from domain.tor_message import decode_tor_message_for_final_node, decode_tor_message_for_intermediate_node, \
-    encode_tor_message_for_final_node, \
-    encode_tor_message_for_intermediate_node, is_final_node
+from domain.cryptocontainer import encrypt_message_using_public_key
+from domain.tor_message import encode_tor_message_for_final_node, \
+    encode_tor_message_for_intermediate_node
 from models.node import TorNode
-from server_node import ServerNode
 
 cheat = {}
 
@@ -31,24 +28,28 @@ class TorClient:
     def _generate_path(self, path_length=4) -> List[TorNode]:
         return random.sample(self.known_nodes, k=path_length)
 
-    def _send_message_to_node(self, http_message: str) -> str:
+    def _build_message(self, http_message: str) -> Tuple[str, List[str]]:
         tor_message = encode_tor_message_for_final_node(
-            http_message,
-            self.sym_key
+            http_message
         )
 
-        tor_message = encrypt_message_using_public_key(tor_message, self.path[-1].public_key.encode("utf-8"))
+        tor_message, first_sym_key = encrypt_message_using_public_key(tor_message,
+                                                                      self.path[-1].public_key.encode("utf-8"))
+
+        sym_keys = [first_sym_key]
 
         for node in self.path[::-1][1:]:
-            tor_message = encode_tor_message_for_intermediate_node(tor_message, self.path[self.path.index(node)+1])
-            tor_message = encrypt_message_using_public_key(tor_message, node.public_key.encode("utf-8"))
-
-        return tor_message
+            tor_message = encode_tor_message_for_intermediate_node(tor_message, self.path[self.path.index(node) + 1])
+            tor_message, sym_key = encrypt_message_using_public_key(tor_message, node.public_key.encode("utf-8"))
+            sym_keys.append(sym_key)
+        return tor_message, sym_keys
 
     def send_http_message(self, message: str) -> str:
-        response = self._send_message_to_node(message)
+        response, sym_keys = self._build_message(message)
         request = requests.post(f"http://{self.path[0].ip}:{self.path[0].port}", response)
+        response = request.text
 
-        return Fernet(self.sym_key).decrypt(request.text).decode()
-
-
+        for sym_key in sym_keys[::-1]:
+            response = Fernet(sym_key).decrypt(response.encode("utf-8")).decode("utf-8")
+        print(response)
+        return response
