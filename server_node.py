@@ -1,7 +1,8 @@
 import re
-import socket
 import socketserver
+import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from threading import Thread
 
 import requests
 from cryptography.fernet import Fernet
@@ -106,11 +107,20 @@ class ServerNodeHTTPHandler(socketserver.ThreadingMixIn, BaseHTTPRequestHandler)
 
 
 class ServerNode(HTTPServer):
-    def __init__(self, server_address: tuple[str, int], private_key_path=None, public_key_path=None):
+    def __init__(self, server_address: tuple[str, int], registry_address: tuple[str, int], private_key_path=None,
+                 public_key_path=None):
         super().__init__(server_address, ServerNodeHTTPHandler)
 
         self.crypto = CryptoContainer(private_key_path, public_key_path)
         self.http_handler = ServerNodeHTTPHandler
+        self.registry_address = registry_address
+
+        # make a request asynchronously to the registry to register the node
+        Thread(target=self.register_node).start()
+
+    def register_node(self):
+        time.sleep(5)
+        requests.post(f"http://{self.registry_address[0]}:{self.registry_address[1]}/add/{self.server_address[1]}")
 
     def get_request(self):
         return super().get_request()

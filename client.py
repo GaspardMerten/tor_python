@@ -14,14 +14,21 @@ cheat = {}
 
 # noinspection HttpUrlsUsage
 class TorClient:
-    def __init__(self, known_nodes: List[TorNode]):
+    def __init__(self, registry_address: Tuple[str, int]):
         self.path = None
         self.sym_key = None
-        self.known_nodes = known_nodes
+        self.known_nodes = []
+        self.registry_address = registry_address
         # Instantiates path and crypto
         self.refresh()
 
     def refresh(self, path_length=4):
+        # retrieve nodes from registry
+        nodes_data = requests.get(f"http://{self.registry_address[0]}:{self.registry_address[1]}", timeout=1).json()
+
+        # extract nodes from nodes_data
+        self.known_nodes = [TorNode(*address.split(":"), public_key) for address, public_key in nodes_data.items()]
+
         self.sym_key = Fernet.generate_key()
         self.path = self._generate_path(path_length=path_length)
 

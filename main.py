@@ -1,12 +1,14 @@
 import threading
+import time
 
 from client import TorClient
 from models.node import TorNode
+from registry_node import RegistryNode
 from server_node import ServerNode
 
 if __name__ == '__main__':
     server_nodes = [
-        ServerNode(("localhost", 8080 + i))
+        ServerNode(("localhost", 8080 + i), registry_address=("localhost", 8001))
         for i in range(10)
     ]
 
@@ -21,15 +23,14 @@ if __name__ == '__main__':
         def run(self):
             self.server_node.serve_forever()
 
-    threads = [Thread(server_node) for server_node in server_nodes]
+
+    registry = RegistryNode(("localhost", 8001))
+    threads = [Thread(server_node) for server_node in server_nodes] + [Thread(registry)]
 
     input("Press Enter to continue...")
 
-    tor_client = TorClient(list(map(lambda server_node: TorNode(
-        server_node.server_address[0],
-        server_node.server_address[1],
-        server_node.crypto.get_public_key_bytes().decode("utf-8"),
-    ), server_nodes)))
+    tor_client = TorClient(registry.server_address)
+
 
     def build_http_get_message_from_url():
         return f"""GET / HTTP/2.0
@@ -44,6 +45,7 @@ Upgrade-Insecure-Requests: 1
 Sec-GPC: 1
 Pragma: no-cache
 Cache-Control: no-cache"""
+
 
     print(tor_client.send_http_message(
         build_http_get_message_from_url()
