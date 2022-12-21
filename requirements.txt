@@ -1,3 +1,5 @@
 pyopenssl
 requests
 chardet
+mitmproxy
+netlib

@@ -47,6 +47,4 @@ Pragma: no-cache
 Cache-Control: no-cache"""
 
 
-    print(tor_client.send_http_message(
-        build_http_get_message_from_url()
-    ))
+    input()

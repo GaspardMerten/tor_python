@@ -55,9 +55,11 @@ class TorClient:
         tor_message = encode_tor_message_for_final_node(
             http_message
         )
+        print("h")
 
         tor_message, first_sym_key = encrypt_message_using_public_key(tor_message,
                                                                       self.path[-1].public_key.encode("utf-8"))
+        print("hi")
 
         sym_keys = [first_sym_key]
 
@@ -65,14 +67,18 @@ class TorClient:
             tor_message = encode_tor_message_for_intermediate_node(tor_message, self.path[self.path.index(node) + 1])
             tor_message, sym_key = encrypt_message_using_public_key(tor_message, node.public_key.encode("utf-8"))
             sym_keys.append(sym_key)
+        print("hio")
+
         return tor_message, sym_keys
 
     def send_http_message(self, message: str) -> str:
         """
             Sends a message through the Tor network.
         """
-        response, sym_keys = self._build_message(message)
-        request = requests.post(f"http://{self.path[0].ip}:{self.path[0].port}", response)
+        print(message)
+        tor_message, sym_keys = self._build_message(message)
+        print(tor_message)
+        request = requests.post(f"http://{self.path[0].ip}:{self.path[0].port}", tor_message, timeout=5)
         response = request.text
 
         for sym_key in sym_keys[::-1]:

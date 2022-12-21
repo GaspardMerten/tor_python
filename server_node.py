@@ -14,9 +14,11 @@ from domain.tor_message import decode_tor_message_for_final_node, decode_tor_mes
 
 def send_http_request_from_raw_http_message(raw_http_message):
     regex = r"([A-Z]+)\s(\/.*)\sHTTP\/([1-2](?:.[0-2])?)\sHost:\s(.*)\s([\s\S]*)"
-
+    print("HELLOOOOO")
+    print(raw_http_message)
     match = re.match(regex, raw_http_message, re.MULTILINE)
     method = match.group(1)
+    print("DID MATCH")
     path = match.group(2)
     http_version = match.group(3)
     host = match.group(4)
@@ -26,7 +28,6 @@ def send_http_request_from_raw_http_message(raw_http_message):
 
     if http_version[0] == "1":
         protocol = "http"
-
     if "\r\n\r\n" in headers_and_body:
         raw_headers, body = headers_and_body.split("\r\n\r\n")
     else:
