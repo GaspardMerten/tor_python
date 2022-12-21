@@ -1,1 +1,0 @@
-mitmproxy  -s proxy.py

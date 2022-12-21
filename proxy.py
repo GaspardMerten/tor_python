@@ -7,17 +7,25 @@ from mitmproxy.tools import dump
 
 from client import TorClient
 
-client = TorClient(("localhost", 8001))
+client = None
+
+
 class RequestLogger:
+    def __init__(self, tor_client):
+        self.tor_client = tor_client
+
     def request(self, flow):
         if "info.cern.ch" in flow.request.pretty_host:
             assemble = assemble_request(flow.request).decode("utf-8")
-            resp = client.send_http_message(assemble)
+            resp = self.tor_client.send_http_message(assemble)
             print(resp)
             print("REPLIED")
             flow.reply(resp)
 
-async def start_proxy(host, port):
+
+async def start_proxy(host, port, tor_registry_address):
+    tor_client = TorClient(tor_registry_address)
+
     opts = options.Options(listen_host=host, listen_port=port)
 
     master = dump.DumpMaster(
@@ -25,7 +33,7 @@ async def start_proxy(host, port):
         with_termlog=False,
         with_dumper=False,
     )
-    master.addons.add(RequestLogger())
+    master.addons.add(RequestLogger(tor_client))
 
     await master.run()
     return master
@@ -34,4 +42,4 @@ async def start_proxy(host, port):
 if __name__ == '__main__':
     host = sys.argv[1]
     port = int(sys.argv[2])
-    asyncio.run(start_proxy(host, port))
+    asyncio.run(start_proxy(host, port, (sys.argv[3], int(sys.argv[4]))))

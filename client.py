@@ -5,8 +5,8 @@ from typing import List, Tuple
 from cryptography.fernet import Fernet
 
 from domain.cryptocontainer import encrypt_message_using_public_key
-from domain.tor_message import encode_tor_message_for_final_node, \
-    encode_tor_message_for_intermediate_node
+from domain.tor_message import create_onion_message, encode_tor_message_for_final_node, \
+    encode_tor_message_for_intermediate_node, peel_response
 from models.node import TorNode
 
 cheat = {}
@@ -52,36 +52,18 @@ class TorClient:
         """
         Builds the message to send through the Tor network.
         """
-        tor_message = encode_tor_message_for_final_node(
-            http_message
-        )
-        print("h")
-
-        tor_message, first_sym_key = encrypt_message_using_public_key(tor_message,
-                                                                      self.path[-1].public_key.encode("utf-8"))
-        print("hi")
-
-        sym_keys = [first_sym_key]
-
-        for node in self.path[::-1][1:]:
-            tor_message = encode_tor_message_for_intermediate_node(tor_message, self.path[self.path.index(node) + 1])
-            tor_message, sym_key = encrypt_message_using_public_key(tor_message, node.public_key.encode("utf-8"))
-            sym_keys.append(sym_key)
-        print("hio")
+        sym_keys, tor_message = create_onion_message(self.path, http_message)
 
         return tor_message, sym_keys
 
     def send_http_message(self, message: str) -> str:
         """
-            Sends a message through the Tor network.
+            Sends a message through the Tor network, receives the response and returns it (peeled).
         """
-        print(message)
         tor_message, sym_keys = self._build_message(message)
-        print(tor_message)
         request = requests.post(f"http://{self.path[0].ip}:{self.path[0].port}", tor_message, timeout=5)
         response = request.text
 
-        for sym_key in sym_keys[::-1]:
-            response = Fernet(sym_key).decrypt(response.encode("utf-8")).decode("utf-8")
-        print(response)
+        response = peel_response(response, sym_keys)
+
         return response

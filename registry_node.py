@@ -1,15 +1,11 @@
 import json
-import re
 import socketserver
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import List
 
 import requests
-from cryptography.fernet import Fernet
 
 from domain.cryptocontainer import CryptoContainer
-from domain.tor_message import decode_tor_message_for_final_node, decode_tor_message_for_intermediate_node, \
-    is_final_node
 from models.node import TorNode
 
 MAX_NODE_PUBLIC_KEY_ATTEMPT = 2
@@ -17,6 +13,27 @@ MAX_NODE_PUBLIC_KEY_ATTEMPT = 2
 
 # noinspection HttpUrlsUsage
 class RegistryNodeHTTPHandler(socketserver.ThreadingMixIn, BaseHTTPRequestHandler):
+    """
+        A simple http handler that acts as a node registry for the tor network. It is quite
+        primitive as it is not able to sink itself wit other registires (making the network
+        centralized, but it is a good start).
+
+        It has four endpoints:
+
+            - GET /: returns a json object containing the ip and port of all the nodes in the
+            network and their public key.
+
+            - POST /add/<port>: adds a node to the list of nodes based on a request from that given node
+            (only the node can be specified in the request, the ip used will be the one used to send the request).
+            The idea behind this is to prevent one ip from registering multiple nodes without even having to change ip.
+
+            - GET /remove/<port>: removes a node from the list of nodes based on a request from that given node
+
+            - GET /check/<ip>:<port>: checks if a node is still alive and removes it from the list of nodes if it is not.
+            If it is not, it will also remove the node from the list of nodes. This method can be called by anyone
+            contrary to the previous two.
+    """
+
     def __init__(self, request: bytes, client_address: tuple[str, int], server: socketserver.BaseServer,
                  nodes: List[TorNode]):
         self.nodes = nodes

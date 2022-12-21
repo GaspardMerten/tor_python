@@ -1,4 +1,3 @@
-import re
 import socketserver
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -8,66 +7,25 @@ import requests
 from cryptography.fernet import Fernet
 
 from domain.cryptocontainer import CryptoContainer
+from domain.http_message import send_http_request_from_raw_http_message
 from domain.tor_message import decode_tor_message_for_final_node, decode_tor_message_for_intermediate_node, \
     is_final_node
 
 
-def send_http_request_from_raw_http_message(raw_http_message):
-    regex = r"([A-Z]+)\s(\/.*)\sHTTP\/([1-2](?:.[0-2])?)\sHost:\s(.*)\s([\s\S]*)"
-    print("HELLOOOOO")
-    print(raw_http_message)
-    match = re.match(regex, raw_http_message, re.MULTILINE)
-    method = match.group(1)
-    print("DID MATCH")
-    path = match.group(2)
-    http_version = match.group(3)
-    host = match.group(4)
-    headers_and_body = match.group(5)
-
-    protocol = "https"
-
-    if http_version[0] == "1":
-        protocol = "http"
-    if "\r\n\r\n" in headers_and_body:
-        raw_headers, body = headers_and_body.split("\r\n\r\n")
-    else:
-        raw_headers = headers_and_body
-        body = None
-
-    request_func = requests.get
-
-    if method == "POST":
-        request_func = requests.post
-    elif method == "PUT":
-        request_func = requests.put
-    elif method == "DELETE":
-        request_func = requests.delete
-
-    headers = {}
-
-    for header_line in raw_headers.splitlines():
-        header_name, header_value = header_line.split(": ")
-        headers[header_name] = header_value
-
-    response = request_func(
-        f"{protocol}://{host}{path}",
-        headers=headers,
-        data=body,
-        timeout=10
-    )
-
-    return response_object_to_raw_http_message(response)
-
-
-def response_object_to_raw_http_message(response):
-    def format_headers(d):
-        return '\n'.join(f'{k}: {v}' for k, v in d.items())
-
-    return f"""{response.status_code} {response.reason} {response.url}\n{format_headers(response.headers)}\n\n{response.text}"""
-
-
 # noinspection HttpUrlsUsage
 class ServerNodeHTTPHandler(socketserver.ThreadingMixIn, BaseHTTPRequestHandler):
+    """
+        A tor node http handler that handles the http requests from the client and the intermediate nodes.
+        It decrypts the message, sends it to the next node and encrypts the response.
+        Or when it is an exit node, it sends the message to the server and encrypts the response and sends
+        it to the previous node.
+
+        The handler has multiple endpoints:
+
+        - /key: returns the public key of the node
+        - (POST) /: handles the http request from the client or the intermediate node
+
+    """
     def __init__(self, request: bytes, client_address: tuple[str, int], server: socketserver.BaseServer,
                  crypto: CryptoContainer):
         self.crypto = crypto
@@ -120,7 +78,7 @@ class ServerNode(HTTPServer):
         Thread(target=self.register_node).start()
 
     def register_node(self):
-        time.sleep(5)
+        time.sleep(1)
         requests.post(f"http://{self.registry_address[0]}:{self.registry_address[1]}/add/{self.server_address[1]}")
 
     def get_request(self):
