@@ -1,4 +1,5 @@
 import socketserver
+import sys
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from threading import Thread
@@ -26,6 +27,7 @@ class ServerNodeHTTPHandler(socketserver.ThreadingMixIn, BaseHTTPRequestHandler)
         - (POST) /: handles the http request from the client or the intermediate node
 
     """
+
     def __init__(self, request: bytes, client_address: tuple[str, int], server: socketserver.BaseServer,
                  crypto: CryptoContainer):
         self.crypto = crypto
@@ -89,3 +91,8 @@ class ServerNode(HTTPServer):
 
     def finish_request(self, request, client_address):
         self.http_handler(request, client_address, self, self.crypto)
+
+
+if __name__ == '__main__':
+    server_node = ServerNode((sys.argv[1], int(sys.argv[2])), (sys.argv[3], int(sys.argv[4])))
+    server_node.serve_forever()

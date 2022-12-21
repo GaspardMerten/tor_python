@@ -1,6 +1,3 @@
-pyopenssl
 requests
-chardet
 mitmproxy
-netlib
 cryptography

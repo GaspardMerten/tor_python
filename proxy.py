@@ -1,8 +1,8 @@
 import asyncio
 import sys
+
 from mitmproxy import options
 from mitmproxy.net.http.http1 import assemble_request
-
 from mitmproxy.tools import dump
 
 from client import TorClient
@@ -15,12 +15,15 @@ class RequestLogger:
         self.tor_client = tor_client
 
     def request(self, flow):
-        if "info.cern.ch" in flow.request.pretty_host:
+        try:
             assemble = assemble_request(flow.request).decode("utf-8")
+
+
             resp = self.tor_client.send_http_message(assemble)
-            print(resp)
-            print("REPLIED")
+
             flow.reply(resp)
+        except Exception as e:
+            print(e)
 
 
 async def start_proxy(host, port, tor_registry_address):

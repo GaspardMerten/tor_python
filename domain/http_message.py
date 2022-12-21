@@ -98,7 +98,7 @@ def send_http_request_from_raw_http_message(raw_http_message: str) -> str:
         if ": " in header_line:
             header_name, header_value = header_line.split(": ")
             headers[header_name] = header_value
-
+    print("HERE")
     response = request_func(
         f"{protocol}://{raw_message.host}{raw_message.path}",
         headers=headers,

@@ -1,12 +1,10 @@
 import random
-import requests
 from typing import List, Tuple
 
+import requests
 from cryptography.fernet import Fernet
 
-from domain.cryptocontainer import encrypt_message_using_public_key
-from domain.tor_message import create_onion_message, encode_tor_message_for_final_node, \
-    encode_tor_message_for_intermediate_node, peel_response
+from domain.tor_message import create_onion_message, peel_response
 from models.node import TorNode
 
 cheat = {}
@@ -45,10 +43,10 @@ class TorClient:
         self.sym_key = Fernet.generate_key()
         self.path = self._generate_path(path_length=path_length)
 
-    def _generate_path(self, path_length=4) -> List[TorNode]:
+    def _generate_path(self, path_length=3) -> List[TorNode]:
         return random.sample(self.known_nodes, k=path_length)
 
-    def _build_message(self, http_message: str) -> Tuple[str, List[str]]:
+    def _build_message(self, http_message: str) -> tuple[str, list[bytes]]:
         """
         Builds the message to send through the Tor network.
         """

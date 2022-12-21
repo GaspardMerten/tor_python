@@ -1,9 +1,11 @@
 import json
 import socketserver
+import sys
 import uuid
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from domain.cryptocontainer import CryptoContainer
+from server_node import ServerNode
 
 # The number of times the server will try to retrieve the public key from a given node.
 # The higher, the longer it will take to discover that a node is down.
@@ -93,3 +95,8 @@ class AuthServerNode(HTTPServer):
 
     def finish_request(self, request, client_address):
         self.http_handler(request, client_address, self, self.user_tokens)
+
+
+if __name__ == '__main__':
+    auth_node = AuthServerNode((sys.argv[1], int(sys.argv[2])))
+    auth_node.serve_forever()

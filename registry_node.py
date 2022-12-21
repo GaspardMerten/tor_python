@@ -1,5 +1,6 @@
 import json
 import socketserver
+import sys
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import List
 
@@ -118,3 +119,8 @@ class RegistryNode(HTTPServer):
 
     def finish_request(self, request, client_address):
         self.http_handler(request, client_address, self, self.nodes)
+
+
+if __name__ == '__main__':
+    registry_node = RegistryNode((sys.argv[1], int(sys.argv[2])))
+    registry_node.serve_forever()
