@@ -14,6 +14,12 @@ cheat = {}
 
 # noinspection HttpUrlsUsage
 class TorClient:
+    """
+        This class is responsible for sending messages through the Tor network.
+        It uses the registry to retrieve the list of nodes and then builds a path of nodes to send the message through.
+        It also encrypts the message using the onion encryption method (layer by layer encryption).
+    """
+
     def __init__(self, registry_address: Tuple[str, int]):
         self.path = None
         self.sym_key = None
@@ -22,7 +28,14 @@ class TorClient:
         # Instantiates path and crypto
         self.refresh()
 
-    def refresh(self, path_length=4):
+    def refresh(self, path_length=3):
+        """
+        Refreshes the path and the crypto key used to encrypt the message.
+
+        :param path_length:  The length of the path to build. Should probably be 3 all the time (more than 3 is not
+        recommended since it should not result in more security).
+        """
+
         # retrieve nodes from registry
         nodes_data = requests.get(f"http://{self.registry_address[0]}:{self.registry_address[1]}", timeout=1).json()
 
@@ -36,6 +49,9 @@ class TorClient:
         return random.sample(self.known_nodes, k=path_length)
 
     def _build_message(self, http_message: str) -> Tuple[str, List[str]]:
+        """
+        Builds the message to send through the Tor network.
+        """
         tor_message = encode_tor_message_for_final_node(
             http_message
         )
@@ -52,6 +68,9 @@ class TorClient:
         return tor_message, sym_keys
 
     def send_http_message(self, message: str) -> str:
+        """
+            Sends a message through the Tor network.
+        """
         response, sym_keys = self._build_message(message)
         request = requests.post(f"http://{self.path[0].ip}:{self.path[0].port}", response)
         response = request.text
