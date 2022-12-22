@@ -59,7 +59,7 @@ class TorClient:
             Sends a message through the Tor network, receives the response and returns it (peeled).
         """
         tor_message, sym_keys = self._build_message(message)
-        request = requests.post(f"http://{self.path[0].ip}:{self.path[0].port}", tor_message, timeout=5)
+        request = requests.post(f"http://{self.path[0].ip}:{self.path[0].port}", tor_message, timeout=35)
         response = request.text
 
         response = peel_response(response, sym_keys)
