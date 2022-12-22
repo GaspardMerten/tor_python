@@ -92,6 +92,10 @@ class ServerNode(HTTPServer):
     def finish_request(self, request, client_address):
         self.http_handler(request, client_address, self, self.crypto)
 
+    def log_message(self, format, *args):
+        # TODO: treat log properly
+        return None
+
 
 if __name__ == '__main__':
     server_node = ServerNode((sys.argv[1], int(sys.argv[2])), (sys.argv[3], int(sys.argv[4])))

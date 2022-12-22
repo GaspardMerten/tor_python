@@ -3,7 +3,7 @@ import re
 import requests
 
 from models.http_message import RawHttpRequest, RawHttpResponse
-from hyper.contrib import HTTP20Adapter
+
 # A fat regex coded by hand to parse HTTP messages (requests) (HTTP1 AND 2 !!!)
 http_message_request_regex = r"([A-Z]+)\s(\S*)\sHTTP\/([1-2](?:.[0-2])?)\s(?:(?:Host:\s(.*))\n)?((?:[\S ]*:[\S ]*\s?)*)(?:\s\s([\s\S]*))?"
 
@@ -28,10 +28,8 @@ def extract_data_from_http_raw_request(raw_message: str) -> RawHttpRequest:
     body = match.group(6)
 
     if http_version[0] == "2":
-        print("XXX", path)
         protocol, path = path.split("://")
 
-        print("RRR:" + path)
         split_path = path.split("/", 0)
         if len(split_path) == 1:
             path = "/"
@@ -73,13 +71,13 @@ def response_object_to_raw_http_message(response):
     return f"""{response.status_code} {response.reason} {response.url}\r\n{format_headers(response.headers)}\r\n\r\n{response.text}"""
 
 
+# TODO: requests does not support HTTP2
 def send_http_request_from_raw_http_message(raw_http_message: str) -> str:
     """
     Sends an HTTP request from a raw HTTP message
     :param raw_http_message: The raw HTTP message
     :return: A raw HTTP response message using the response_object_to_raw_http_message function
     """
-    print("yy==" + raw_http_message + "==yy")
     raw_message: RawHttpRequest = extract_data_from_http_raw_request(raw_http_message)
 
     if ":443" in raw_message.host:
@@ -112,7 +110,6 @@ def send_http_request_from_raw_http_message(raw_http_message: str) -> str:
             headers[header_name] = header_value
 
     url = f"{protocol}://{raw_message.host}{raw_message.path}"
-    print("url:" + url)
 
     response = request_func(
         url,

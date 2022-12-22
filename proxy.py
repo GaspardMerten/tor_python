@@ -1,11 +1,12 @@
 import asyncio
 import sys
 
-from mitmproxy import options
+from mitmproxy import http, options
 from mitmproxy.net.http.http1 import assemble_request
 from mitmproxy.tools import dump
 
 from client import TorClient
+from domain.http_message import extract_data_from_http_raw_response
 
 client = None
 
@@ -18,12 +19,27 @@ class RequestLogger:
         try:
             assemble = assemble_request(flow.request).decode("utf-8")
 
-
             resp = self.tor_client.send_http_message(assemble)
+            raw_http = extract_data_from_http_raw_response(resp)
+            headers = {}
 
-            flow.reply(resp)
-        except Exception as e:
-            print(e)
+            for header_line in raw_http.headers.splitlines():
+                if ": " in header_line:
+                    header_name, header_value = header_line.split(": ")
+                    headers[header_name] = header_value
+
+            flow.response = http.Response.make(
+                raw_http.status_code,  # (optional) status code
+                raw_http.body.encode("utf-8"),  # (optional) content
+                headers,  # (optional) headers
+            )
+        except Exception as s:
+            print("NOT WORKING")
+            flow.response = http.Response.make(
+                404,  # (optional) status code
+            )
+        else:
+            print("RESPONDED")
 
 
 async def start_proxy(host, port, tor_registry_address):

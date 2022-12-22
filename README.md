@@ -75,3 +75,9 @@ You can run the demo just by launching the demo.py file.
 Then just follow the instructions.
 
 
+## LIMITATIONS
+
+HTTP2 is not supported. This is because the protocol is not supported by 
+the requests library. HTTPX is a good alternative and should probably be used
+in the future.
+

@@ -49,7 +49,13 @@ class AuthServerHTTPHandler(socketserver.ThreadingMixIn, BaseHTTPRequestHandler)
                 self.send_response(403)
                 self.end_headers()
                 self.wfile.write("Unauthorized".encode("utf-8"))
+        else:
+            self.send_response(404)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
 
+            self.wfile.write(
+                json.dumps({"code": 404, "message": "Not found"}).encode())
     def do_POST(self):
         # adds a node to the list of node based on a request from that given node
         if self.path == "/auth":

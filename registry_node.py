@@ -93,7 +93,6 @@ class RegistryNodeHTTPHandler(socketserver.ThreadingMixIn, BaseHTTPRequestHandle
 
     def _retrieve_public_key_from_node(self, ip, port, n=0):
         try:
-            print(f"Retrieving n == {n} public key from {ip}:{port}")
             public_key = requests.get(f"http://{ip}:{port}/key", timeout=2).text
         except requests.exceptions.ConnectionError:
             if n < MAX_NODE_PUBLIC_KEY_ATTEMPT:
