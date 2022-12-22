@@ -13,7 +13,9 @@ def encode_tor_message_for_final_node(message: str) -> str:
     return f"1\n" + message
 
 
-def encode_tor_message_for_intermediate_node(encrypted_message: str, next_node: TorNode) -> str:
+def encode_tor_message_for_intermediate_node(
+    encrypted_message: str, next_node: TorNode
+) -> str:
     """
     Encode a message to be sent to the next node, 0 is the flag for the intermediate node
     After the 0, the next node address is written, then the encrypted message just after exactly one line break.
@@ -46,7 +48,7 @@ def decode_tor_message_for_intermediate_node(tor_message: str) -> Tuple[str, str
     tor_message = tor_message[2:]
     first_line_end_index = tor_message.find("\n")
     next_node = tor_message[:first_line_end_index]
-    http_message = tor_message[first_line_end_index + 1:]
+    http_message = tor_message[first_line_end_index + 1 :]
 
     return next_node, http_message
 
@@ -62,22 +64,27 @@ def peel_response(response, sym_keys) -> str:
     return response
 
 
-def create_onion_message(path: List[TorNode], http_message: str) -> tuple[list[bytes], str]:
+def create_onion_message(
+    path: List[TorNode], http_message: str
+) -> tuple[list[bytes], str]:
     """
     Creates the onion message to send through the Tor network.
 
     To achieve this, the message is encrypted using the symmetric keys in the reverse order (path speaking, last to first).
     """
-    tor_message = encode_tor_message_for_final_node(
-        http_message
+    tor_message = encode_tor_message_for_final_node(http_message)
+    tor_message, first_sym_key = encrypt_message_using_public_key(
+        tor_message, path[-1].public_key.encode("utf-8")
     )
-    tor_message, first_sym_key = encrypt_message_using_public_key(tor_message,
-                                                                  path[-1].public_key.encode("utf-8"))
     sym_keys = [first_sym_key]
 
     for node in path[::-1][1:]:
-        tor_message = encode_tor_message_for_intermediate_node(tor_message, path[path.index(node) + 1])
-        tor_message, sym_key = encrypt_message_using_public_key(tor_message, node.public_key.encode("utf-8"))
+        tor_message = encode_tor_message_for_intermediate_node(
+            tor_message, path[path.index(node) + 1]
+        )
+        tor_message, sym_key = encrypt_message_using_public_key(
+            tor_message, node.public_key.encode("utf-8")
+        )
         sym_keys.append(sym_key)
 
     return sym_keys, tor_message

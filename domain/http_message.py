@@ -8,7 +8,9 @@ from models.http_message import RawHttpRequest, RawHttpResponse
 http_message_request_regex = r"([A-Z]+)\s(\S*)\sHTTP\/([1-2](?:.[0-2])?)\s(?:(?:Host:\s(.*))\n)?((?:[\S ]*:[\S ]*\s?)*)(?:\s\s([\s\S]*))?"
 
 # Another fat regex coded by hand to parse HTTP messages (responses)
-http_message_response_regex = r"([0-9]{3}) ([a-zA-Z]*)\s(\S*)(?:\n((?:[\S ]*:[\S ]*\s?)*))(?:\s([\s\S]*))?"
+http_message_response_regex = (
+    r"([0-9]{3}) ([a-zA-Z]*)\s(\S*)(?:\n((?:[\S ]*:[\S ]*\s?)*))(?:\s([\s\S]*))?"
+)
 
 
 def extract_data_from_http_raw_request(raw_message: str) -> RawHttpRequest:
@@ -66,7 +68,7 @@ def response_object_to_raw_http_message(response):
     """
 
     def format_headers(d):
-        return '\r\n'.join(f'{k}: {v}' for k, v in d.items())
+        return "\r\n".join(f"{k}: {v}" for k, v in d.items())
 
     return f"""{response.status_code} {response.reason} {response.url}\r\n{format_headers(response.headers)}\r\n\r\n{response.text}"""
 
@@ -111,10 +113,5 @@ def send_http_request_from_raw_http_message(raw_http_message: str) -> str:
 
     url = f"{protocol}://{raw_message.host}{raw_message.path}"
 
-    response = request_func(
-        url,
-        headers=headers,
-        data=raw_message.body,
-        timeout=2
-    )
+    response = request_func(url, headers=headers, data=raw_message.body, timeout=2)
     return response_object_to_raw_http_message(response)
