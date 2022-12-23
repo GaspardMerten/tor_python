@@ -13,6 +13,15 @@ This project is a proof of concept and is not meant to be used in production.
 But it does offer a good starting point to build a new implementation of TOR.
 An implementation that would be more focus on modern web technologies.
 
+## Installation
+
+The only step needed before running the project is to install the dependencies. 
+This can be done by running the following command:
+    
+    pip install -r requirements.txt
+
+
+
 ## How it works
 
 There are three important components in this project:
@@ -44,42 +53,45 @@ to encrypt long messages. So the only way to decrypt the message is to have the 
 To get a better understanding of how the protocol works, you can
 check the documentation in the source code.
 
+## How to run the demo
+
+If you just want to verify that the project works, you can run the
+demo.py file, then just follow the instructions.
+
 ## How to use
 
 You can start a registry node with
 
 ```bash
-python registry_node.py ip port
+python launch_registry.py ip port
 ```
 
 You can start a tor node with
 
 ```bash
-python server_node.py ip port registry_ip registry_port
+python launch_node.py ip port registry_ip registry_port
 ```
 
 You can start an auth server with
 
 ```bash
-python auth_server.py ip port
+python launch_auth.py ip port
 ```
 
 You can start the proxy with
 
 ```bash
-  python proxy.py ip port registry_ip registry_port
+  python launch_proxy.py ip port registry_ip registry_port
 ```
+
+To send message through the TOR network without using the proxy, you should instantiate
+a client in a python script and use the `send_http_message` method to send a request through
+the TOR network.
 
 If you get an issue with firefox not trusting the proxy.
 See: https://stackoverflow.com/questions/62261786/how-to-allow-firefox-to-connect-to-webpage-through-mitmproxy
 
-## How to run the demo
 
-If you just want to verify that the project works, you can run the
-demo.py file.
-
-You can run the demo just by launching the demo.py file.
-Then just follow the instructions.
 
 ## LIMITATIONS
 

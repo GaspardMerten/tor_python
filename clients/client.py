@@ -5,7 +5,7 @@ import requests
 from cryptography.fernet import Fernet
 
 from domain.tor_message import create_onion_message, peel_response
-from models.node import TorNode
+from models import TorNode
 
 cheat = {}
 

@@ -2,7 +2,14 @@ import re
 
 import requests
 
-from models.http_message import RawHttpRequest, RawHttpResponse
+from models import RawHttpRequest, RawHttpResponse
+
+__all__ = (
+    "extract_data_from_http_raw_request",
+    "extract_data_from_http_raw_response",
+    "response_object_to_raw_http_message",
+    "send_http_request_from_raw_http_message",
+)
 
 # A fat regex coded by hand to parse HTTP messages (requests) (HTTP1 AND 2 !!!)
 http_message_request_regex = r"([A-Z]+)\s(\S*)\sHTTP\/([1-2](?:.[0-2])?)\s(?:(?:Host:\s(.*))\n)?((?:[\S ]*:[\S ]*\s?)*)(?:\s\s([\s\S]*))?"

@@ -6,8 +6,8 @@ from typing import List
 
 import requests
 
-from domain.cryptocontainer import CryptoContainer
-from models.node import TorNode
+from domain import CryptoContainer
+from models import TorNode
 
 MAX_NODE_PUBLIC_KEY_ATTEMPT = 2
 
@@ -132,7 +132,3 @@ class RegistryNode(HTTPServer):
     def finish_request(self, request, client_address):
         self.http_handler(request, client_address, self, self.nodes)
 
-
-if __name__ == "__main__":
-    registry_node = RegistryNode((sys.argv[1], int(sys.argv[2])))
-    registry_node.serve_forever()

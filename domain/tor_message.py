@@ -2,8 +2,18 @@ from typing import List, Tuple
 
 from cryptography.fernet import Fernet
 
-from domain.cryptocontainer import encrypt_message_using_public_key
+from domain.crypto import encrypt_message_using_public_key
 from models.node import TorNode
+
+__all__ = (
+    "encode_tor_message_for_final_node",
+    "decode_tor_message_for_intermediate_node",
+    "encode_tor_message_for_intermediate_node",
+    "decode_tor_message_for_final_node",
+    "is_final_node",
+    "create_onion_message",
+    "peel_response"
+)
 
 
 def encode_tor_message_for_final_node(message: str) -> str:

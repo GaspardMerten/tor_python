@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+__all__ = ("RawHttpRequest", "RawHttpResponse")
+
 
 @dataclass
 class RawHttpRequest:

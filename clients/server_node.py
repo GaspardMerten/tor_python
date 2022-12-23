@@ -7,9 +7,9 @@ from threading import Thread
 import requests
 from cryptography.fernet import Fernet
 
-from domain.cryptocontainer import CryptoContainer
-from domain.http_message import send_http_request_from_raw_http_message
-from domain.tor_message import (
+from domain import CryptoContainer
+from domain import send_http_request_from_raw_http_message
+from domain import (
     decode_tor_message_for_final_node,
     decode_tor_message_for_intermediate_node,
     is_final_node,
@@ -112,10 +112,3 @@ class ServerNode(HTTPServer):
     def log_message(self, format, *args):
         # TODO: treat log properly
         return None
-
-
-if __name__ == "__main__":
-    server_node = ServerNode(
-        (sys.argv[1], int(sys.argv[2])), (sys.argv[3], int(sys.argv[4]))
-    )
-    server_node.serve_forever()

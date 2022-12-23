@@ -13,11 +13,11 @@ import json
 import threading
 import time
 
-from auth_server import AuthServerNode
-from client import TorClient
-from domain.http_message import extract_data_from_http_raw_response
-from registry_node import RegistryNode
-from server_node import ServerNode
+from clients.auth_server import AuthServerNode
+from clients.client import TorClient
+from domain import extract_data_from_http_raw_response
+from clients.registry_node import RegistryNode
+from clients.server_node import ServerNode
 
 
 def build_http_post_message_from_url(host, path, data, headers=None):

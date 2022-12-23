@@ -56,9 +56,3 @@ async def start_proxy(host, port, tor_registry_address):
 
     await master.run()
     return master
-
-
-if __name__ == "__main__":
-    host = sys.argv[1]
-    port = int(sys.argv[2])
-    asyncio.run(start_proxy(host, port, (sys.argv[3], int(sys.argv[4]))))
